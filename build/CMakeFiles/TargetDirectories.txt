@@ -1,0 +1,3 @@
+/home/stez/CHENGJIE_test/git_LI/udp_client/build/CMakeFiles/edit_cache.dir
+/home/stez/CHENGJIE_test/git_LI/udp_client/build/CMakeFiles/rebuild_cache.dir
+/home/stez/CHENGJIE_test/git_LI/udp_client/build/CMakeFiles/udp_client.dir

@@ -1,0 +1,1 @@
+/usr/bin/c++      CMakeFiles/udp_client.dir/udp_client.cpp.o  -o udp_client -rdynamic -lm -ljack 
