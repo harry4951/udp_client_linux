@@ -1,4 +1,4 @@
-# Install script for directory: /home/stez/CHENGJIE_test/git_LI/udp_client
+# Install script for directory: /home/chengjie/CHENGJIE/udp_client
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -29,7 +29,7 @@ endif()
 
 # Install shared libraries without execute permission?
 if(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
-  set(CMAKE_INSTALL_SO_NO_EXE "0")
+  set(CMAKE_INSTALL_SO_NO_EXE "1")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/stez/CHENGJIE_test/git_LI/udp_client/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/chengjie/CHENGJIE/udp_client/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

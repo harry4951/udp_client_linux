@@ -16,6 +16,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <math.h>
+//#include <atomic>
 
 #include <jack/jack.h>
 
@@ -37,12 +38,10 @@ typedef struct
 int sock;
 unsigned int length;
 struct sockaddr_in server;
-int flag = 0;
+volatile int flag = 0;
 
 jack_port_t *input_port1;
-jack_port_t *input_port2;
-jack_port_t *output_port1;
-jack_port_t *output_port2;
+//jack_port_t *output_port1;
 jack_client_t *client;
 
 /**
@@ -59,42 +58,23 @@ process (jack_nframes_t nframes, void *arg)
 	jack_default_audio_sample_t *in1, *in2, *out1, *out2;
 	netpacket *netpacket_test = (netpacket*)arg;
 	//netpacket_test->buffer = malloc(sizeof(jack_default_audio_sample_t) * nframes );
-//	static int i = 0;
-//	netpacket_test -> packet_id = 0 ;
-//	netpacket_test -> packet_id_num = i ;
-//	i++;
-//	if(i == N_smallpacket) 
-//	{
-//		i = 0;
-//	}
-	//netpacket_test -> buffer[0] = 1.0;
-	//netpacket_test -> buffer[1] = 1.0;
-	//for(int j = 0; j < BUFFER_SIZE; j++)
-	//{
-	//	netpacket_test -> buffer[j] = 1.0;
-	//}
-	//printf("buffer size %n", times);
-	//sizeof(netpacket_test.buffer));
+	static int i = 0;
+	netpacket_test -> packet_id = 0 ;
+	netpacket_test -> packet_id_num = i ;
+	i++;
+	if(i == N_smallpacket) 
+	{
+		i = 0;
+	}
 
 	in1 = (jack_default_audio_sample_t*)jack_port_get_buffer (input_port1, nframes);
-	//in2 = jack_port_get_buffer (input_port2, nframes);
+	
 	//out1 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port1, nframes);
-	//out2 = jack_port_get_buffer (output_port2, nframes);
 	//memcpy (out1, in1,
 	//	sizeof (jack_default_audio_sample_t) * nframes);
 	memcpy (netpacket_test->buffer, in1,
 		sizeof (float) * BUFFER_SIZE);
 	flag = 1;
-	//memcpy (netpacket_test->buffer, in1,
-	//	sizeof (jack_default_audio_sample_t) * nframes);
-	//memcpy (out1, in1,
-	//	sizeof (jack_default_audio_sample_t) * nframes);
-//	int sent_bytes = sendto(sock, (const void*) netpacket_test,
-//                  sizeof(netpacket),0,(const struct sockaddr *)&server,length);
-//  		if (sent_bytes < 0)
-//  		{
-//  		   	error("Sendto");
-//  		}
 
 	return 0;      
 }
@@ -138,9 +118,7 @@ main (int argc, char *argv[])
 		fprintf (stderr, "unique name `%s' assigned\n", client_name);
 	}
 //////////////////////////////////////////////
-//	 int sock;
-//     unsigned int length;
-//     struct sockaddr_in server;
+	/*Open a UDP socket*/
      struct hostent *hp;
 
      // Parse commmand line arguments
@@ -161,66 +139,14 @@ main (int argc, char *argv[])
            hp->h_length);
      server.sin_port = htons(atoi(argv[2]));
      length=sizeof(struct sockaddr_in);
-/*
-     // Prepare input wavedata with a linear ramp
-    float wavedata[NUM_SAMPLES];
-    //int flag_number = 0;
-    int value = 0;
-	static const float DELTA = 0.1f;
 
-    for(int i=0; i<NUM_SAMPLES; i++) {
-          wavedata[i] = DELTA * value;
-          value++;
-      }
-
-    // Loop over signal in chunks of BUFFER_SIZE and send each buffer to socket
-	//Every time send 32 floating number
-	
-	int N_BUFFERS = NUM_SAMPLES / BUFFER_SIZE/N_smallpacket;
-  //netpacket netpacket_test;
-  for(int big_buf_idx=0; big_buf_idx < N_BUFFERS; big_buf_idx++)
-  {
-    netpacket_test.packet_id = big_buf_idx;
-    //printf("netpacket_test.packet_id %d \n", netpacket_test.packet_id);
-    for(int buf_idx=0; buf_idx<N_smallpacket; buf_idx++)
-    {
-
-      //netpacket_test.packet_id_num = RandomId();
-      netpacket_test.packet_id_num = buf_idx;
-      //printf("netpacket_test.packet_id_num %d \n", netpacket_test.packet_id_num);
-      memcpy(netpacket_test.buffer, &wavedata[(big_buf_idx * N_smallpacket + netpacket_test.packet_id_num) * BUFFER_SIZE], BUFFER_SIZE * sizeof(float));
-      //test timeout function at receiver
-      //if(big_buf_idx!=0 && big_buf_idx!=1)
-      //{
-      //  if(buf_idx==3)
-      //  {
-      //    usleep(100*1000);  //50ms
-      //  }
-      //}
-      //for(int i=0; i< BUFFER_SIZE; i++)
-      //{
-      //  printf("%5.2f\n",netpacket_test.buffer[i]);
-      //}
-
-      int sent_bytes = sendto(sock, (const void*) &netpacket_test,
-                  sizeof(netpacket_test),0,(const struct sockaddr *)&server,length);
-  		if (sent_bytes < 0)
-  		{
-  		   	error("Sendto");
-  		}
-
-  		usleep(1);
-
-    }
-
-  }*/
 ////////////////////////////////////////////////
 	/* tell the JACK server to call `process()' whenever
 	   there is work to be done.
 	*/
 
 	//jack_set_process_callback (client, process, 0);
-jack_set_process_callback (client, process, netpacket_test);
+	jack_set_process_callback (client, process, netpacket_test);
 	/* tell the JACK server to call `jack_shutdown()' if
 	   it ever shuts down, either entirely, or if it
 	   just decides to stop calling us.
@@ -239,18 +165,8 @@ jack_set_process_callback (client, process, netpacket_test);
 	input_port1 = jack_port_register (client, "input1",
 					 JACK_DEFAULT_AUDIO_TYPE,
 					 JackPortIsInput, 0);
-	input_port2 = jack_port_register (client, "input2",
-					 JACK_DEFAULT_AUDIO_TYPE,
-					 JackPortIsInput, 0);
-	output_port1 = jack_port_register (client, "output1",
-					  JACK_DEFAULT_AUDIO_TYPE,
-					  JackPortIsOutput, 0);
-	output_port2 = jack_port_register (client, "output2",
-					  JACK_DEFAULT_AUDIO_TYPE,
-					  JackPortIsOutput, 0);
 
-	if ((input_port1 == NULL) || (output_port1 == NULL) || 
-	(input_port2 == NULL) || (output_port2 == NULL)) {
+	if (input_port1 == NULL) {
 		fprintf(stderr, "no more JACK ports available\n");
 		exit (1);
 	}
@@ -263,40 +179,6 @@ jack_set_process_callback (client, process, netpacket_test);
 		exit (1);
 	}
 
-	/* Connect the ports.  You can't do this before the client is
-	 * activated, because we can't make connections to clients
-	 * that aren't running.  Note the confusing (but necessary)
-	 * orientation of the driver backend ports: playback ports are
-	 * "input" to the backend, and capture ports are "output" from
-	 * it.
-	 */
-/*
-	ports = jack_get_ports (client, NULL, NULL,
-				JackPortIsPhysical|JackPortIsOutput);
-	if (ports == NULL) {
-		fprintf(stderr, "no physical capture ports\n");
-		exit (1);
-	}
-
-	if (jack_connect (client, ports[0], jack_port_name (input_port1))) {
-		fprintf (stderr, "cannot connect input ports\n");
-	}
-
-	free (ports);
-	
-	ports = jack_get_ports (client, NULL, NULL,
-				JackPortIsPhysical|JackPortIsInput);
-	if (ports == NULL) {
-		fprintf(stderr, "no physical playback ports\n");
-		exit (1);
-	}
-
-	if (jack_connect (client, jack_port_name (output_port1), ports[0])) {
-		fprintf (stderr, "cannot connect output ports\n");
-	}
-
-	free (ports);
-*/
 	/* keep running until stopped by the user */
 
 	//sleep (-1);
