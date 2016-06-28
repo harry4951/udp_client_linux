@@ -20,9 +20,9 @@
 
 #include <jack/jack.h>
 
-#define NUM_SAMPLES 1024
-#define BUFFER_SIZE	256
-#define N_smallpacket 4
+#define NUM_SAMPLES 256
+#define BUFFER_SIZE	128
+#define N_smallpacket 2
 
 void error(const char *);
 
@@ -41,7 +41,7 @@ struct sockaddr_in server;
 volatile int flag = 0;
 
 jack_port_t *input_port1;
-//jack_port_t *output_port1;
+jack_port_t *output_port1;
 jack_client_t *client;
 
 /**
@@ -60,21 +60,41 @@ process (jack_nframes_t nframes, void *arg)
 	//netpacket_test->buffer = malloc(sizeof(jack_default_audio_sample_t) * nframes );
 	static int i = 0;
 	netpacket_test -> packet_id = 0 ;
-	netpacket_test -> packet_id_num = i ;
-	i++;
-	if(i == N_smallpacket) 
-	{
-		i = 0;
-	}
+	//netpacket_test -> packet_id_num = i ;
+	//i++;
+	//if(i == N_smallpacket) 
+	//{
+	//	i = 0;
+	//}
 
 	in1 = (jack_default_audio_sample_t*)jack_port_get_buffer (input_port1, nframes);
 	
+	//printf ("buffer size should be: %" PRIu32 "\n",
+	//	sizeof (jack_default_audio_sample_t) * nframes);
+	//printf ("buffer size should be: %" PRIu32 "\n",
+	//	nframes);
 	//out1 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port1, nframes);
 	//memcpy (out1, in1,
 	//	sizeof (jack_default_audio_sample_t) * nframes);
-	memcpy (netpacket_test->buffer, in1,
-		sizeof (float) * BUFFER_SIZE);
-	flag = 1;
+	//memcpy (netpacket_test->buffer, in1,
+	//	sizeof (float) * BUFFER_SIZE);
+	//flag = 1;
+    
+    for(int packet_idx = 0; packet_idx < N_smallpacket; packet_idx++)
+    {	
+    	netpacket_test -> packet_id_num = packet_idx;
+
+    	memcpy (netpacket_test->buffer, in1 + BUFFER_SIZE * packet_idx, sizeof (float) * BUFFER_SIZE);
+
+    	int sent_bytes = sendto(sock, (const void*) netpacket_test,
+                 sizeof(netpacket),0,(const struct sockaddr *)&server,length);
+	  		
+		if (sent_bytes < 0)
+		{
+		   	error("Sendto");
+		}
+	}
+
 
 	return 0;      
 }
@@ -166,7 +186,12 @@ main (int argc, char *argv[])
 					 JACK_DEFAULT_AUDIO_TYPE,
 					 JackPortIsInput, 0);
 
-	if (input_port1 == NULL) {
+	output_port1 = jack_port_register (client, "output1",
+					 JACK_DEFAULT_AUDIO_TYPE,
+					 JackPortIsOutput, 0);
+
+	if ((input_port1 == NULL) || (output_port1 == NULL))
+	{
 		fprintf(stderr, "no more JACK ports available\n");
 		exit (1);
 	}
